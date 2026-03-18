@@ -25,6 +25,7 @@ rsync -avz --delete \
   --exclude='claude resume.txt' \
   --exclude='.claude/' \
   --exclude='venv/' \
+  --exclude='.git/' \
   . "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}"
 
 # ── リモートでセットアップ ────────────────────────────
