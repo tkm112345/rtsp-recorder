@@ -26,7 +26,7 @@ CAMERA_IP       = os.environ["CAMERA_IP"]
 USERNAME        = os.environ["USERNAME"]
 PASSWORD        = os.environ["PASSWORD"]
 NAS_ROOT        = Path(os.environ["NAS_ROOT"])
-DURATION        = 10 * 60            # 録画時間 (秒)  10分 = 600秒
+DURATION        = 6 * 60             # 録画時間 (秒)  6分 = 360秒
 STREAM          = "stream1"           # "stream1" (高画質) / "stream2" (標準画質)
 LOCAL_TMP_DIR   = Path("./recordings")  # 録画中の一時保存先 (録画後にNASへ移動し削除)
 LOG_DIR         = Path("./logs")

@@ -9,9 +9,11 @@ LOG_DIR="${SCRIPT_DIR}/logs"
 
 # 追加したい cron エントリ一覧
 declare -a CRON_JOBS=(
+  "0  1 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 深夜 1:00
   "0  8 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 朝 8:00
-  "0 13 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 昼 13:00
-  "0 21 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 夜 21:00
+  "0 14 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 昼 14:00
+  "0 19 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 夕方 19:00
+  "0 22 * * * ${RECORD_CMD} >> ${LOG_DIR}/record.log 2>&1"   # 夜 22:00
   "30 4 * * * ${BACKUP_CMD} >> ${LOG_DIR}/backup.log 2>&1"   # バックアップ 4:30
 )
 
