@@ -81,44 +81,14 @@ def record(rtsp_url: str, output_file: Path, duration_sec: int, logger: logging.
         return 1
 
 
-def is_nas_available(nas_root: Path) -> bool:
-    try:
-        nas_root.stat()
-        return True
-    except OSError:
-        return False
+def move_to_nas(local_file: Path, nas_root: Path, now: datetime, logger: logging.Logger) -> None:
+    nas_dir = nas_root / now.strftime("%Y") / now.strftime("%m") / now.strftime("%d")
+    nas_dir.mkdir(parents=True, exist_ok=True)
+    dest = nas_dir / local_file.name
 
-
-def move_to_nas(local_file: Path, nas_root: Path, now: datetime, logger: logging.Logger) -> bool:
-    """NASへ移動する。成功したら True，失敗したら False を返す。"""
-    try:
-        nas_dir = nas_root / now.strftime("%Y") / now.strftime("%m") / now.strftime("%d")
-        nas_dir.mkdir(parents=True, exist_ok=True)
-        dest = nas_dir / local_file.name
-        logger.info("NASへ移動中: %s -> %s", local_file, dest)
-        shutil.move(str(local_file), dest)
-        logger.info("移動完了。ローカルファイルを削除しました。")
-        return True
-    except OSError as e:
-        logger.warning("NASへの移動失敗 (%s)。ローカルに保持します: %s", e, local_file)
-        return False
-
-
-def flush_pending_to_nas(nas_root: Path, logger: logging.Logger) -> None:
-    """NAS復旧後に recordings/ に残っているファイルをNASへ移動する。"""
-    pending = list(LOCAL_TMP_DIR.glob("tapo_c225_*.mp4"))
-    if not pending:
-        return
-
-    logger.info("未転送ファイルが %d 件あります。NASへ移動します。", len(pending))
-    for f in pending:
-        try:
-            # ファイル名のタイムスタンプから日付を復元
-            ts = datetime.strptime(f.stem.split("_", 1)[1], "%Y%m%d_%H%M%S")
-            if move_to_nas(f, nas_root, ts, logger):
-                logger.info("移動済み: %s", f.name)
-        except Exception as e:
-            logger.warning("移動スキップ (%s): %s", f.name, e)
+    logger.info("NASへ移動中: %s -> %s", local_file, dest)
+    shutil.move(str(local_file), dest)
+    logger.info("移動完了。ローカルファイルを削除しました。")
 
 
 def main() -> None:
@@ -127,10 +97,6 @@ def main() -> None:
 
     now = datetime.now()
     LOCAL_TMP_DIR.mkdir(parents=True, exist_ok=True)
-
-    # NASが復旧していれば未転送ファイルを先に移動
-    if is_nas_available(NAS_ROOT):
-        flush_pending_to_nas(NAS_ROOT, logger)
 
     timestamp = now.strftime("%Y%m%d_%H%M%S")
     local_file = LOCAL_TMP_DIR / f"tapo_c225_{timestamp}.mp4"
@@ -141,14 +107,11 @@ def main() -> None:
 
     if returncode != 0:
         logger.error("録画失敗: ffmpeg が終了コード %d で終了", returncode)
+        local_file.unlink(missing_ok=True)
         sys.exit(returncode)
 
     logger.info("録画完了: %s", local_file)
-
-    if is_nas_available(NAS_ROOT):
-        move_to_nas(local_file, NAS_ROOT, now, logger)
-    else:
-        logger.warning("NAS未接続のためローカルに保持します: %s", local_file)
+    move_to_nas(local_file, NAS_ROOT, now, logger)
 
 
 if __name__ == "__main__":
