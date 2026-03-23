@@ -30,31 +30,69 @@ cp .env.example .env
 ```
 
 ```ini
-CAMERA_IP=192.168.x.x       # カメラのIPアドレス
-USERNAME=camera_user         # カメラアカウントのユーザー名
-PASSWORD=camera_password     # カメラアカウントのパスワード
-NAS_ROOT=/mnt/nas/tapo-c225  # NAS の保存先ルートパス
+CAMERA_IP=192.168.x.x                  # カメラのIPアドレス
+USERNAME=camera_user                    # カメラアカウントのユーザー名
+PASSWORD=camera_password                # カメラアカウントのパスワード
+NAS_ROOT=/mnt/nas/tapo-c225            # NAS の録画保存先ルートパス
+BACKUP_DIR=/mnt/nas/backups/tapo-child  # NAS のバックアップ保存先
+LOG_BACKUP_DAYS=30                      # ログの保持日数
+BACKUP_KEEP_DAYS=30                     # バックアップの保持日数
 ```
 
 実行：
 
 ```bash
-python3 record.py
+venv/bin/python record.py
 ```
 
 ## 保存先
 
-録画ファイルは `NAS_ROOT` 配下に **年/月/日** のフォルダ階層で保存されます。
+録画ファイルはローカルに一時保存後，`NAS_ROOT` 配下に **年/月/日** のフォルダ階層で保存されます。
 
 ```
 /mnt/nas/tapo-c225/
 └── 2026/
     └── 03/
         └── 18/
-            └── tapo_c225_20260318_162402.mp4
+            └── tapo_c225_20260318_080000.mp4
 ```
 
-> NAS をマウントしていない場合は，事前に `sudo mount` などでマウントしてください。
+> NAS をマウントしていない場合，録画は失敗します。事前に `sudo mount -a` でマウントしてください。
+
+## cron スケジュール
+
+`setup_cron.sh` を実行すると以下のスケジュールが登録されます（録画時間: 6分）：
+
+| 時刻 | 内容 |
+|------|------|
+| 深夜 1:00 | 録画 |
+| 朝 8:00 | 録画 |
+| 昼 14:00 | 録画 |
+| 夕方 19:00 | 録画 |
+| 夜 22:00 | 録画 |
+| 早朝 4:30 | バックアップ |
+
+```bash
+# 既存のcronを削除してから再登録
+./remove_cron.sh
+./setup_cron.sh
+```
+
+## デプロイ
+
+```bash
+./deploy.sh
+```
+
+ローカルから `proxmox@192.168.1.4:/home/proxmox/tapo-child` へ rsync で転送し，venv のセットアップまで自動で行います。
+
+## バックアップ
+
+```bash
+./backup.sh
+```
+
+ソースコードとログを `BACKUP_DIR` 配下にタイムスタンプ付きで保存します。`BACKUP_KEEP_DAYS` より古いバックアップは自動削除されます。
 
 ## RTSP URL 形式
 
