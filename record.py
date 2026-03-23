@@ -60,11 +60,15 @@ def build_rtsp_url(ip: str, user: str, password: str, stream: str) -> str:
 def record(rtsp_url: str, output_file: Path, duration_sec: int, logger: logging.Logger) -> int:
     cmd = [
         "ffmpeg",
-        "-rtsp_transport", "tcp",   # TCPで安定接続
+        "-rtsp_transport", "tcp",       # TCPで安定接続
+        "-buffer_size", "2048k",        # 受信バッファを拡張（映像/音声の途切れ対策）
+        "-use_wallclock_as_timestamps", "1",  # 壁時計でタイムスタンプを生成（同期ずれ対策）
         "-i", rtsp_url,
-        "-c:v", "copy",             # 映像はH.264のままコピー (再エンコードなし)
-        "-c:a", "aac",              # 音声はAACに変換 (pcm_alawはMP4非対応のため)
-        "-t", str(duration_sec),    # 録画時間
+        "-c:v", "copy",                 # 映像はH.264のままコピー (再エンコードなし)
+        "-c:a", "aac",                  # 音声はAACに変換 (pcm_alawはMP4非対応のため)
+        "-fflags", "+genpts",           # タイムスタンプを再生成（ブツブツ対策）
+        "-avoid_negative_ts", "make_zero",  # 負のタイムスタンプを補正
+        "-t", str(duration_sec),        # 録画時間
         str(output_file),
     ]
 
